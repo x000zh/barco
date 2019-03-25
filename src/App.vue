@@ -22,12 +22,13 @@ import BarCode from './components/BarCode.vue'
 export default {
   name: 'app',
   data: function(){
+    let data = this.loadState();
     return {
       codeList: [],
-      codes: '',
-      barcodeWidth: 2,
-      barcodeHeight: 24,
-      barcodeFormat: 'CODE128',
+      codes: null==data?'':data.codes,
+      barcodeWidth: null==data?2:data.barcodeWidth,
+      barcodeHeight: null==data?24:data.barcodeHeight,
+      barcodeFormat: null==data?'CODE128':data.barcodeFormat,
       barcodeFormats: [
         'CODE128',
         'CODE128A',
@@ -53,6 +54,9 @@ export default {
       ],
     }
   },
+  mounted: function(){
+    this.changeCodeList();
+  },
   components: {
     BarCode
   },
@@ -72,6 +76,7 @@ export default {
         }
       }
       this.codeList = ret;
+      this.changeState();
     },
     autoSize: function($event){
       let height = 20 * this.codes.split("\n").length;
@@ -80,6 +85,33 @@ export default {
         height = 40;
       }
       elm.style.height = height + "px";
+    },
+    changeState: function(){
+      let data = {
+        codes: this.codes,
+        barcodeWidth: this.barcodeWidth,
+        barcodeHeight: this.barcodeHeight,
+        barcodeFormat: this.barcodeFormat,
+      };
+      let query = '?data=' + encodeURIComponent(JSON.stringify(data));
+      if(query != window.location.search){
+        let url = window.location.href.split('?')[0] + query;
+        window.history.pushState(data, null, url);
+      }
+    },
+    loadState: function(){
+      let search = window.location.search.split("?");
+      let data = null;
+      if(2 == search.length ){
+        let vars = search[1].split('&');
+        vars.forEach(function(v){
+          let tmp = v.split('=');
+          if('data' == tmp[0] && tmp.length > 1){
+            data = JSON.parse(decodeURIComponent(tmp[1]));
+          }
+        })
+      }
+      return data;
     }
   },
 }
